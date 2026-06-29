@@ -1,0 +1,66 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches:
+      - master # Triggers deployment when you push to the master/main branch
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }} # Google Cloud Project ID
+  GAR_LOCATION: asia-south1                  # Region of your Artifact Registry
+  GAR_REPO: civiverse-repo                   # Artifact Registry repository name
+  SERVICE_NAME: civiverse                    # Cloud Run service name
+  SERVICE_REGION: asia-south1                # Cloud Run deployment region
+
+jobs:
+  deploy:
+    name: Build, Push, and Deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      # -- 1. Authenticate with Google Cloud --
+      # Recommended: Store GCP Service Account JSON key in GitHub Secret "GCP_SA_KEY"
+      - name: Authenticate with Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # -- 2. Set up Google Cloud SDK --
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # -- 3. Configure Docker for Google Artifact Registry --
+      - name: Configure Docker
+        run: |
+          gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev --quiet
+
+      # -- 4. Build and Push Container Image --
+      - name: Build and Push Docker Container
+        run: |
+          IMAGE_TAG="${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          
+          # Build multi-stage Dockerfile
+          docker build -t $IMAGE_TAG .
+          
+          # Push to Artifact Registry
+          docker push $IMAGE_TAG
+          
+          # Output tag for next step
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      # -- 5. Deploy Container to Google Cloud Run --
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.SERVICE_REGION }}
+          image: ${{ env.IMAGE_TAG }}
+          flags: '--allow-unauthenticated' # Allow public citizen access

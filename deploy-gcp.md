@@ -76,7 +76,60 @@ Once deployment completes, the terminal will print a **Service URL** (e.g. `http
 
 ---
 
+## Automated Deployment with GitHub Actions
+
+A automated CI/CD pipeline has been configured in [.github/workflows/deploy.yml](file:///.github/workflows/deploy.yml). It will build the Docker container and deploy it to Cloud Run automatically whenever you push code changes to the `master` branch.
+
+### Setup Instructions for GitHub Actions:
+
+#### 1. Create a Google Cloud Service Account
+Create a dedicated Service Account for GitHub Actions to authenticate:
+```bash
+gcloud iam service-accounts create github-deployer \
+    --description="CI/CD Service Account for GitHub Actions" \
+    --display-name="GitHub Deployer"
+```
+
+#### 2. Grant Required IAM Permissions
+Run the following commands to grant the necessary permissions so that the pipeline can push images and update Cloud Run:
+```bash
+# Set your active project ID env variable
+PROJECT_ID=$(gcloud config get-value project)
+
+# 1. Allow service account to manage Cloud Run services
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:github-deployer@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/run.admin"
+
+# 2. Allow service account to upload container images to Artifact Registry
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:github-deployer@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/artifactregistry.writer"
+
+# 3. Allow service account to use the default Compute Engine service account to run the service
+gcloud iam service-accounts add-iam-policy-binding \
+    $PROJECT_ID-compute@developer.gserviceaccount.com \
+    --member="serviceAccount:github-deployer@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/iam.serviceAccountUser"
+```
+
+#### 3. Generate Service Account Key JSON
+Create and download a private key for the service account:
+```bash
+gcloud iam service-accounts keys create key.json \
+    --iam-account=github-deployer@$PROJECT_ID.iam.gserviceaccount.com
+```
+
+#### 4. Configure GitHub Repository Secrets
+Go to your GitHub repository: **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret** and add the following two secrets:
+1. `GCP_PROJECT_ID`: Your Google Cloud Project ID (e.g. `civiverse-123456`).
+2. `GCP_SA_KEY`: Paste the complete contents of the downloaded `key.json` file.
+
+*Make sure to delete the local `key.json` file once added to GitHub secrets to prevent committing it to source control!*
+
+---
+
 ## Serverless Scaling & Cost Optimization
 Google Cloud Run scales down to **zero instances** when there is no traffic. This means you will incur **zero charges** unless citizens are actively using the application.
 
-*For persistent, multi-instance data storage (instead of the default local JSON file), swap the storage layer in `server.js` with Google Cloud Firestore or Google Cloud SQL (Postgres).*
+*For persistent, multi-instance data storage (instead of the default local JSON files in `data/`), swap the storage read/write calls in `backend/db.py` to use a cloud database like Google Cloud Firestore or Google Cloud SQL (Postgres).*
