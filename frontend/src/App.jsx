@@ -38,7 +38,12 @@ const AppContent = () => {
   };
 
   const renderActiveView = () => {
-    // Admin users always see the admin panel tab
+    // Profile is accessible to everyone
+    if (activeView === 'profile') {
+      return <ProfileView setActiveView={handleSetView} />;
+    }
+
+    // Admin users see the admin panel for all other views
     if (userRole === 'admin') {
       return <AdminView activeTab={activeView} setActiveTab={handleSetView} />;
     }
@@ -87,7 +92,11 @@ const AppContent = () => {
 
           <main className="main-content">
             <Header activeView={activeView} setActiveView={handleSetView} />
-            <div className="page-content" style={activeView === 'feed' ? { padding: '16px', overflow: 'hidden' } : {}}>
+            <div className="page-content" style={
+              (activeView === 'feed' || (userRole === 'admin' && activeView !== 'profile'))
+                ? { padding: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }
+                : {}
+            }>
               {renderActiveView()}
             </div>
           </main>

@@ -488,18 +488,13 @@ const AdminView = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab })
   const inProgress = issues.filter(i => i.status === 'In Progress').length;
   const citizenCount = users.filter(u => u.role === 'citizen').length;
 
-  const tabs = [
-    { id: 'issues', icon: 'fa-list-check', label: 'Issues' },
-    { id: 'users', icon: isMoAdmin ? 'fa-hard-hat' : 'fa-users', label: isMoAdmin ? 'My Team' : 'Citizens' },
-    { id: 'analytics', icon: 'fa-chart-pie', label: 'Analytics' },
-  ];
 
   const filteredUsers = users.filter(u =>
     !searchUsers || u.username.toLowerCase().includes(searchUsers.toLowerCase()) || (u.email || '').toLowerCase().includes(searchUsers.toLowerCase())
   );
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, minHeight: 0 }}>
 
       {/* Stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
@@ -510,24 +505,10 @@ const AdminView = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab })
         <STAT_CARD icon={isMoAdmin ? 'fa-hard-hat' : 'fa-users'} label={isMoAdmin ? 'Employees' : 'Citizens'} value={isMoAdmin ? employees.length : citizenCount} color="#ffc107" bg="rgba(255,193,7,0.12)" />
       </div>
 
-      {/* Tab nav */}
-      <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', padding: '4px', border: '1px solid var(--border-color)', width: 'fit-content' }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
-            background: activeTab === t.id ? 'linear-gradient(135deg, var(--accent-steel), #3a68b0)' : 'none',
-            border: 'none', color: activeTab === t.id ? '#fff' : 'var(--text-secondary)',
-            padding: '8px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-            fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-primary)',
-            transition: 'all var(--transition-fast)', display: 'flex', alignItems: 'center', gap: '7px',
-          }}>
-            <i className={`fas ${t.icon}`} />{t.label}
-          </button>
-        ))}
-      </div>
 
       {/* ── ISSUES TAB ── */}
       {activeTab === 'issues' && (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, minHeight: 0 }}>
 
           {/* Toolbar */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -568,7 +549,7 @@ const AdminView = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab })
 
           {/* Map view */}
           {viewMode === 'map' && (
-            <div style={{ position: 'relative', height: 'calc(100vh - 300px)', minHeight: '480px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}>
+            <div style={{ position: 'relative', flex: 1, minHeight: 0, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}>
               <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
               {loading && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,15,26,0.7)', zIndex: 10 }}>
