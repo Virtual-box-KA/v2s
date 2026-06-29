@@ -86,7 +86,7 @@ const AppContent = () => {
           <Sidebar activeView={activeView} setActiveView={handleSetView} />
 
           <main className="main-content">
-            <Header activeView={activeView} />
+            <Header activeView={activeView} setActiveView={handleSetView} />
             <div className="page-content" style={activeView === 'feed' ? { padding: '16px', overflow: 'hidden' } : {}}>
               {renderActiveView()}
             </div>

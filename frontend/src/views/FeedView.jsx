@@ -55,6 +55,7 @@ const FeedView = ({ selectedIssueId, setSelectedIssueId }) => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [showMyReports, setShowMyReports] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [statusNote, setStatusNote] = useState('');
   const [statusSelect, setStatusSelect] = useState('Open');
@@ -83,6 +84,7 @@ const FeedView = ({ selectedIssueId, setSelectedIssueId }) => {
 
   const filteredIssues = useMemo(() => {
     let result = [...issues];
+    if (showMyReports) result = result.filter(i => i.createdBy === currentUser);
     if (filterCity) result = result.filter(i => i.city === filterCity);
     if (filterCategory) result = result.filter(i => i.category === filterCategory);
     if (filterStatus) {
@@ -105,7 +107,7 @@ const FeedView = ({ selectedIssueId, setSelectedIssueId }) => {
       result.sort((a, b) => (w[b.severity] || 0) - (w[a.severity] || 0));
     }
     return result;
-  }, [issues, search, filterCity, filterStatus, filterCategory, sortBy]);
+  }, [issues, search, filterCity, filterStatus, filterCategory, sortBy, showMyReports, currentUser]);
 
   const handleCardClick = (issue) => {
     setSelectedIssueId(issue.id);
@@ -241,6 +243,32 @@ const FeedView = ({ selectedIssueId, setSelectedIssueId }) => {
               <option value="severity">Severity</option>
             </select>
           </div>
+
+          {/* My Reports toggle chip */}
+          {!isAgent && (
+            <div style={{ padding: '0 0 8px 0', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                onClick={() => setShowMyReports(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '5px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: '700', transition: 'all 0.2s ease',
+                  background: showMyReports ? 'var(--accent-steel)' : 'var(--bg-tertiary)',
+                  color: showMyReports ? '#fff' : 'var(--text-secondary)',
+                  boxShadow: showMyReports ? '0 0 12px rgba(74,120,192,0.4)' : 'none',
+                }}
+              >
+                <i className="fas fa-flag" style={{ fontSize: '10px' }} />
+                My Reports
+                {showMyReports && <i className="fas fa-times" style={{ fontSize: '9px', marginLeft: '2px' }} />}
+              </button>
+              {showMyReports && (
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {filteredIssues.length} issue{filteredIssues.length !== 1 ? 's' : ''} by you
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Cards */}
           <div id="feed-cards-container" className="feed-cards-container">

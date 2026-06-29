@@ -12,7 +12,6 @@ const Sidebar = ({ activeView, setActiveView }) => {
     { id: 'report',    icon: 'fa-plus-circle', label: 'Report Issue' },
     { id: 'insights',  icon: 'fa-brain',       label: 'City Pulse' },
     { id: 'rewards',   icon: 'fa-medal',       label: 'Rewards Hub' },
-    { id: 'profile',   icon: 'fa-user-circle', label: 'My Profile' },
   ];
 
   const adminNavItems = [
