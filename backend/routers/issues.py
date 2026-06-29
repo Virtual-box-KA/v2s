@@ -161,8 +161,9 @@ def verify_issue(issue_id: int, body: VerifyIssueRequest):
     return {"issue": issue, "statusUpdated": status_updated}
 
 
-# ── POST update status ───────────────────────────────────────────────────────
+# ── POST/PATCH update status ──────────────────────────────────────────────────
 @router.post("/{issue_id}/status")
+@router.patch("/{issue_id}/status")
 def update_status(issue_id: int, body: StatusUpdateRequest):
     if not body.status:
         raise HTTPException(400, "Status is required")

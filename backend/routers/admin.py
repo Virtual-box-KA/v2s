@@ -186,28 +186,16 @@ def assign_issue(phone: str, issue_id: int, body: AssignIssueBody = None):
     issue = next((i for i in issues if i["id"] == issue_id), None)
     if issue:
         issue["assignedTo"] = emp["username"]
+        issue["status"] = "In Progress"
         ts = datetime.now(timezone.utc).isoformat()
 
         # Assignment timeline note
-        assign_note = f"Assigned to {emp['username']} ({emp.get('department', 'General')})"
-        if body.assignedBy:
-            assign_note += f" by {body.assignedBy}"
         issue.setdefault("timeline", []).append({
-            "status": issue.get("status", "Open"),
+            "status": "In Progress",
             "timestamp": ts,
-            "note": assign_note,
+            "note": f"Assigned to {emp['username']}",
             "image": None,
         })
-
-        # Auto-advance to In Progress if still Open
-        if issue.get("status") == "Open":
-            issue["status"] = "In Progress"
-            issue["timeline"].append({
-                "status": "In Progress",
-                "timestamp": ts,
-                "note": "Status updated to In Progress — work has been assigned to a field officer.",
-                "image": None,
-            })
 
         write_issues(issues)
 

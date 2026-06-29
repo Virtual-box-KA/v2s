@@ -229,7 +229,7 @@ def get_stats(username: Optional[str] = None, city: Optional[str] = None):
 @router.get("/leaderboard")
 def get_leaderboard():
     users = read_users()
-    citizens = [u for u in users if u.get("role") != "admin"]
+    citizens = [u for u in users if u.get("role") == "citizen"]
     leaderboard = sorted(
         [{"name": u["username"], "score": u.get("xp", 0), "reports": 0,
           "verifications": 0, "badge": u.get("badge", "")} for u in citizens],
@@ -246,7 +246,7 @@ def sync_xp(username: str, body: XPSyncRequest):
     user = next((u for u in users if u.get("username", "").lower() == username.lower()), None)
     if not user:
         raise HTTPException(404, "User not found")
-    if user.get("role") == "admin":
+    if user.get("role") in ("admin", "employee"):
         return user
 
     user["xp"] = user.get("xp", 0) + body.xpGained

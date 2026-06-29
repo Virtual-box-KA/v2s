@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }) => {
 
   // Sync XP points
   const awardXP = async (amount, reason) => {
-    if (!currentUser || userRole === 'admin') return;
+    if (!currentUser || userRole === 'admin' || userRole === 'employee') return;
 
     try {
       const response = await fetch(`/api/users/${currentUser}/xp`, {
