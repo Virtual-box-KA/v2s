@@ -51,7 +51,7 @@ const RewardsView = () => {
   ];
 
   const badges = [
-    { name: 'Aadhaar Verified', desc: 'Securely registered profile with verified ID document.', icon: 'fa-shield-check', active: true },
+    { name: 'Aadhaar Verified', desc: 'Securely registered profile with verified ID document.', icon: 'fa-shield-halved', active: true },
     { name: 'Pothole Sentinel', desc: 'Contributed 3 verified road hazard incidents.', icon: 'fa-road', active: profile?.level >= 2 },
     { name: 'Eco-Warrior', desc: 'Successfully resolved garbage/sanitation reports.', icon: 'fa-leaf', active: profile?.level >= 3 },
     { name: 'Civic Champion', desc: 'Highest contributor with over 500 XP.', icon: 'fa-crown', active: profile?.level >= 5 }
@@ -182,13 +182,15 @@ const RewardsView = () => {
             <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>
               <i className="fas fa-medal" style={{ color: 'var(--accent-steel)', marginRight: '6px' }} /> Achievements Badges
             </h3>
-            <div className="badges-grid">
+            <div className="badge-vault-grid">
               {badges.map((badge, idx) => (
-                <div key={idx} className={`badge-vault-item ${badge.active ? 'unlocked' : 'locked'}`} title={badge.desc}>
-                  <div className="badge-vault-icon">
+                <div key={idx} className={`badge-item ${badge.active ? 'unlocked' : 'locked'}`} title={badge.desc}>
+                  {!badge.active && <i className="fas fa-lock badge-lock-icon" />}
+                  <div className="badge-icon-box">
                     <i className={`fas ${badge.icon}`} />
                   </div>
-                  <div className="badge-vault-name">{badge.name}</div>
+                  <div className="badge-name">{badge.name}</div>
+                  <div className="badge-desc">{badge.desc}</div>
                 </div>
               ))}
             </div>
