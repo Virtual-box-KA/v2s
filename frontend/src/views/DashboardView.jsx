@@ -1,14 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+const STATUS_CONFIG = {
+  Resolved:    { cls: 'badge-resolved', color: 'var(--color-resolved)' },
+  'In Progress':{ cls: 'badge-progress',  color: 'var(--color-progress)' },
+  Critical:    { cls: 'badge-critical',   color: 'var(--color-critical)' },
+  Open:        { cls: 'badge-open',       color: 'var(--color-open)' },
+};
+
+const getBadge = (issue) => {
+  if (issue.status === 'Resolved') return 'badge-resolved';
+  if (issue.status === 'In Progress') return 'badge-progress';
+  if (issue.severity === 'Critical') return 'badge-critical';
+  return 'badge-open';
+};
+
 const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
   const { showToast, currentUser } = useAuth();
 
-  const [metrics, setMetrics] = useState({ total: 0, resolved: 0, resolutionRate: 0, critical: 0, communityVotes: 0 });
-  const [recentIssues, setRecentIssues] = useState([]);
+  const [metrics, setMetrics]       = useState({ total: 0, resolved: 0, resolutionRate: 0, critical: 0, communityVotes: 0 });
+  const [myIssues, setMyIssues]     = useState([]);
+  const [allIssues, setAllIssues]   = useState([]);
 
-  const mapContainerRef = useRef(null);
-  const mapInitialized = useRef(false);
+  const mapContainerRef  = useRef(null);
+  const mapInitialized   = useRef(false);
   const categoryChartRef = useRef(null);
 
   useEffect(() => {
@@ -22,20 +37,24 @@ const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [resStats, resIssues] = await Promise.all([
+        const [resStats, resAllIssues, resMyIssues] = await Promise.all([
           fetch(`/api/stats?username=${currentUser || ''}`),
-          fetch(`/api/issues?username=${currentUser || ''}`)
+          fetch(`/api/issues`),                                   // all issues for map
+          fetch(`/api/issues?createdBy=${currentUser || ''}`)    // only user's issues
         ]);
-        if (!resStats.ok || !resIssues.ok) throw new Error();
-        const dataStats = await resStats.json();
-        const issuesList = await resIssues.json();
+        if (!resStats.ok || !resAllIssues.ok) throw new Error();
+
+        const dataStats   = await resStats.json();
+        const issuesList  = await resAllIssues.json();
+        const myList      = resMyIssues.ok ? await resMyIssues.json() : [];
 
         setMetrics(dataStats.metrics);
+        setAllIssues(issuesList);
 
-        const sorted = [...issuesList].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setRecentIssues(sorted.slice(0, 6));
+        // Filter my issues client-side as a fallback (in case API doesn't filter by createdBy)
+        const mine = issuesList.filter(i => i.createdBy === currentUser);
+        setMyIssues(mine.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
 
-        // Small delay so DOM renders
         setTimeout(() => {
           renderCategoryChart(dataStats.categoryBreakdown);
           renderLeafletMap(issuesList);
@@ -45,7 +64,7 @@ const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
       }
     };
     fetchStats();
-  }, []);
+  }, [currentUser]);
 
   const renderCategoryChart = (breakdown) => {
     if (!categoryChartRef.current || !window.Chart) return;
@@ -65,14 +84,9 @@ const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '65%',
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
         plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { color: 'rgba(255,255,255,0.65)', font: { family: 'Outfit', size: 11 }, padding: 14 }
-          }
+          legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.65)', font: { family: 'Outfit', size: 11 }, padding: 14 } }
         }
       }
     });
@@ -83,17 +97,15 @@ const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
     if (!mapContainerRef.current || !window.L || mapInitialized.current) return;
     mapInitialized.current = true;
 
-    const validIssues = issues.filter(i => i.location.lat && i.location.lng);
-    const center = validIssues.length > 0
-      ? [validIssues[0].location.lat, validIssues[0].location.lng]
-      : [28.7712, 77.4725];
+    const valid = issues.filter(i => i.location.lat && i.location.lng);
+    const center = valid.length > 0 ? [valid[0].location.lat, valid[0].location.lng] : [28.7712, 77.4725];
 
     const map = window.L.map(mapContainerRef.current).setView(center, 11);
     window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap © CARTO', maxZoom: 20
     }).addTo(map);
 
-    validIssues.forEach(issue => {
+    valid.forEach(issue => {
       let cls = 'marker-open';
       if (issue.status === 'Resolved') cls = 'marker-resolved';
       else if (issue.status === 'In Progress') cls = 'marker-progress';
@@ -104,7 +116,6 @@ const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
         html: `<div class="map-marker-dot ${cls}" title="${issue.title}"></div>`,
         iconSize: [13, 13], iconAnchor: [6, 6]
       });
-
       const marker = window.L.marker([issue.location.lat, issue.location.lng], { icon }).addTo(map);
       marker.bindPopup(`
         <div style="font-family:var(--font-primary);padding:4px">
@@ -116,25 +127,19 @@ const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
     });
   };
 
-  const getBadge = (issue) => {
-    if (issue.status === 'Resolved') return 'badge-resolved';
-    if (issue.status === 'In Progress') return 'badge-progress';
-    if (issue.severity === 'Critical') return 'badge-critical';
-    return 'badge-open';
-  };
-
   const metricCards = [
     { label: 'Total Reports', value: metrics.total, icon: 'fa-file-invoice', color: 'var(--accent-steel)', bg: 'rgba(74,120,192,0.12)' },
     { label: 'Resolution Rate', value: `${metrics.resolutionRate}%`, icon: 'fa-clipboard-check', color: '#2ec4b6', bg: 'rgba(46,196,182,0.12)' },
     { label: 'Active Critical', value: metrics.critical, icon: 'fa-exclamation-triangle', color: 'var(--color-critical)', bg: 'rgba(224,94,94,0.12)' },
     { label: 'Community Votes', value: metrics.communityVotes, icon: 'fa-thumbs-up', color: '#ffc107', bg: 'rgba(255,193,7,0.12)' },
+    { label: 'My Reports', value: myIssues.length, icon: 'fa-flag', color: '#9b5de5', bg: 'rgba(155,93,229,0.12)' },
   ];
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* Metric cards row */}
-      <div className="metrics-grid">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
         {metricCards.map(m => (
           <div key={m.label} className="glass-panel metric-card">
             <div className="metric-icon" style={{ backgroundColor: m.bg, color: m.color }}>
@@ -148,8 +153,9 @@ const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
         ))}
       </div>
 
-      {/* Map + recent split */}
+      {/* Map + My Reports split */}
       <div className="dashboard-center-grid">
+        {/* Live map */}
         <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>Live Telemetry Map</h3>
@@ -161,27 +167,78 @@ const DashboardView = ({ setActiveView, setSelectedIssueId }) => {
           <div ref={mapContainerRef} style={{ height: '380px' }} />
         </div>
 
+        {/* My Reports panel */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border-color)' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>Recent Incidents</h3>
+          <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>
+              <i className="fas fa-flag" style={{ marginRight: '8px', color: '#9b5de5' }} />
+              My Reports
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{myIssues.length} total</span>
+              <button
+                onClick={() => setActiveView('report')}
+                style={{ padding: '5px 12px', fontSize: '11px', background: 'var(--accent-steel)', border: 'none', borderRadius: 'var(--radius-sm)', color: '#fff', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                <i className="fas fa-plus" /> New
+              </button>
+            </div>
           </div>
-          <div className="recent-list" style={{ flex: 1 }}>
-            {recentIssues.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)', fontSize: '12px', padding: '24px', textAlign: 'center' }}>No reports yet.</div>
-            ) : recentIssues.map(issue => (
-              <div key={issue.id} className="recent-item" onClick={() => { setSelectedIssueId(issue.id); setActiveView('feed'); }}>
-                <div className="recent-item-info">
-                  <div className="recent-item-title">{issue.title}</div>
-                  <div className="recent-item-loc"><i className="fas fa-map-marker-alt" /> {issue.location.address}</div>
-                </div>
-                <span className={`badge ${getBadge(issue)}`}>{issue.status}</span>
-              </div>
-            ))}
-          </div>
+
+          {myIssues.length === 0 ? (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'var(--text-muted)', padding: '32px' }}>
+              <i className="fas fa-flag" style={{ fontSize: '32px', opacity: 0.2 }} />
+              <div style={{ fontSize: '13px', textAlign: 'center' }}>You haven't reported any issues yet.</div>
+              <button
+                onClick={() => setActiveView('report')}
+                className="btn"
+                style={{ fontSize: '12px', padding: '8px 18px' }}
+              >
+                <i className="fas fa-plus" style={{ marginRight: '6px' }} />Report an Issue
+              </button>
+            </div>
+          ) : (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {myIssues.map(issue => {
+                const cfg = issue.status === 'Resolved' ? STATUS_CONFIG.Resolved
+                  : issue.status === 'In Progress' ? STATUS_CONFIG['In Progress']
+                  : issue.severity === 'Critical' ? STATUS_CONFIG.Critical
+                  : STATUS_CONFIG.Open;
+                return (
+                  <div
+                    key={issue.id}
+                    onClick={() => { setSelectedIssueId(issue.id); setActiveView('feed'); }}
+                    style={{
+                      padding: '12px 18px', borderBottom: '1px solid var(--border-color)',
+                      cursor: 'pointer', transition: 'background 0.15s',
+                      display: 'flex', gap: '12px', alignItems: 'flex-start',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    {/* Status dot */}
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: cfg.color, marginTop: '5px', flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{issue.title}</div>
+                        <span className={`badge ${getBadge(issue)}`} style={{ fontSize: '9px', flexShrink: 0 }}>{issue.status}</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <span><i className="fas fa-tag" style={{ marginRight: '3px' }} />{issue.category}</span>
+                        <span><i className="fas fa-city" style={{ marginRight: '3px' }} />{issue.city}</span>
+                        <span style={{ color: '#ffc107' }}><i className="fas fa-arrow-up" style={{ marginRight: '3px' }} />{issue.upvotes}</span>
+                        <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Category breakdown chart */}
+      {/* Category chart + AI Forecast */}
       <div className="charts-grid">
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h3 style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>Issues by Category</h3>

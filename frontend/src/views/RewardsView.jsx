@@ -154,9 +154,11 @@ const RewardsView = () => {
         <div className="rewards-right-column">
           
           {/* Ranks list */}
-          <div className="glass-panel leaderboard-panel">
-            <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}><i className="fas fa-trophy" style={{ color: '#ffc107', marginRight: '6px' }}></i> Civic Leaderboard</h3>
-            <div className="leaderboard-list">
+          <div className="glass-panel leaderboard-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>
+              <i className="fas fa-trophy" style={{ color: '#ffc107', marginRight: '6px' }} /> Civic Leaderboard
+            </h3>
+            <div className="leaderboard-list" style={{ overflowY: 'auto', maxHeight: '420px', flex: 1 }}>
               {loading ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '12px', padding: '20px 0', textAlign: 'center' }}>
                   Loading ranks...

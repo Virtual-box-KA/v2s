@@ -138,23 +138,6 @@ const Header = ({ activeView, setActiveView }) => {
                 My Profile
               </button>
 
-              {/* My Reports — citizens only */}
-              {!isAgent && (
-                <button
-                  onClick={() => { setActiveView?.('profile'); setDropdownOpen(false); }}
-                  style={{
-                    width: '100%', padding: '10px 16px', background: 'none', border: 'none',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
-                    color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '600',
-                    textAlign: 'left', transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-tertiary)'; e.currentTarget.style.color = '#fff'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                >
-                  <i className="fas fa-flag" style={{ width: '16px', textAlign: 'center', color: '#ffc107' }} />
-                  My Reports
-                </button>
-              )}
 
               <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
 
