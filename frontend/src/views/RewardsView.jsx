@@ -150,15 +150,15 @@ const RewardsView = () => {
 
         </div>
 
-        {/* Right Side: Leaderboard + Badges — bounded flex column */}
-        <div className="rewards-right-column" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minHeight: 0 }}>
+        {/* Right Side: Leaderboard + Badges */}
+        <div className="rewards-right-column">
 
           {/* Leaderboard */}
-          <div className="glass-panel leaderboard-panel" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', flexShrink: 0 }}>
+          <div className="glass-panel leaderboard-panel">
+            <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>
               <i className="fas fa-trophy" style={{ color: '#ffc107', marginRight: '6px' }} /> Civic Leaderboard
             </h3>
-            <div className="leaderboard-list" style={{ overflowY: 'auto', flex: 1, minHeight: 0, maxHeight: '380px' }}>
+            <div className="leaderboard-list">
               {loading ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '12px', padding: '20px 0', textAlign: 'center' }}>
                   Loading ranks...
@@ -178,8 +178,7 @@ const RewardsView = () => {
             </div>
           </div>
 
-          {/* Achievements Badges — fixed-height, no overflow */}
-          <div className="glass-panel badges-panel" style={{ flexShrink: 0 }}>
+          <div className="glass-panel badges-panel">
             <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>
               <i className="fas fa-medal" style={{ color: 'var(--accent-steel)', marginRight: '6px' }} /> Achievements Badges
             </h3>

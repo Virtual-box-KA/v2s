@@ -3,12 +3,36 @@
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
+  align-items: start;   /* columns don't stretch to match each other */
 }
 
 .rewards-left-column {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* Right column: leaderboard + badges stacked, bounded */
+.rewards-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Leaderboard panel caps its own height; list scrolls inside */
+.leaderboard-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboard-panel .leaderboard-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+/* Badges panel is self-contained */
+.badges-panel {
+  flex-shrink: 0;
 }
 
 /* User Level details */
@@ -91,6 +115,25 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.leaderboard-user {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  padding-left: 10px;
+}
+
+.leaderboard-username {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.leaderboard-badge {
+  font-size: 10px;
+  color: var(--text-muted);
 }
 
 .leaderboard-item {
@@ -322,4 +365,72 @@
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--color-resolved);
+}
+
+/* ── Achievements Badges grid ── */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.badge-vault-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  text-align: center;
+  transition: all var(--transition-fast);
+  cursor: help;
+}
+
+.badge-vault-item.unlocked {
+  border-color: rgba(74, 120, 192, 0.35);
+  background: rgba(74, 120, 192, 0.06);
+}
+
+.badge-vault-item.locked {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+
+.badge-vault-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-steel);
+}
+
+.badge-vault-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: var(--transition-fast);
+}
+
+.badge-vault-item.unlocked .badge-vault-icon {
+  background: rgba(74, 120, 192, 0.15);
+  border-color: rgba(74, 120, 192, 0.4);
+  color: var(--accent-steel);
+  box-shadow: 0 0 10px rgba(74, 120, 192, 0.25);
+}
+
+.badge-vault-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.badge-vault-item.unlocked .badge-vault-name {
+  color: var(--text-primary);
 }
