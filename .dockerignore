@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.git
+.agents
+.gemini
+C:\Users\Keshav\.gemini
+Dockerfile
+deploy-gcp.md
+C:\Users\Keshav\.gemini\antigravity-ide\brain\*

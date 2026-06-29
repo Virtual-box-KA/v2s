@@ -1,0 +1,199 @@
+/* Metrics grid layout */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.metric-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background-color: var(--accent-steel-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--accent-steel);
+}
+
+.metric-card.critical .metric-icon {
+  background-color: var(--color-critical-bg);
+  color: var(--color-critical);
+}
+
+.metric-card.resolved .metric-icon {
+  background-color: var(--color-resolved-bg);
+  color: var(--color-resolved);
+}
+
+.metric-card.votes .metric-icon {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.metric-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.metric-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Dashboard Map & Recent split */
+.dashboard-center-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+  min-height: 430px;
+}
+
+.map-wrapper {
+  height: 450px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-container {
+  width: 100%;
+  flex: 1;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  z-index: 10; /* Lower than dropdowns and popups */
+}
+
+/* Leaflet Overrides for Glass Theme */
+.leaflet-container {
+  background: var(--bg-primary) !important;
+  font-family: var(--font-primary) !important;
+}
+
+.leaflet-bar {
+  border: 1px solid var(--border-color) !important;
+  box-shadow: none !important;
+}
+
+.leaflet-bar a {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.leaflet-popup-tip {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.map-marker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.map-marker-dot.marker-open { background-color: var(--color-open); box-shadow: 0 0 10px var(--color-open); }
+.map-marker-dot.marker-progress { background-color: var(--color-progress); box-shadow: 0 0 10px var(--color-progress); }
+.map-marker-dot.marker-resolved { background-color: var(--color-resolved); box-shadow: 0 0 10px var(--color-resolved); }
+.map-marker-dot.marker-critical { background-color: var(--color-critical); box-shadow: 0 0 12px var(--color-critical); animation: pulseDot 1.5s infinite; }
+
+@keyframes pulseDot {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 94, 94, 0.7); }
+  70% { transform: scale(1.2); box-shadow: 0 0 0 6px rgba(224, 94, 94, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 94, 94, 0); }
+}
+
+/* Recent list */
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.recent-item:hover {
+  border-color: var(--accent-steel);
+  background-color: var(--bg-tertiary);
+  transform: translateX(4px);
+}
+
+.recent-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 70%;
+}
+
+.recent-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-item-loc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Chart sections in dashboard */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.chart-card {
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container-div {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}

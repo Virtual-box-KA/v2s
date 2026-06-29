@@ -1,0 +1,292 @@
+/* Stepper progress indicator */
+.stepper-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  margin-bottom: 30px;
+  padding: 0 40px;
+}
+
+.stepper-container::before {
+  content: '';
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  top: 50%;
+  height: 2px;
+  background-color: var(--bg-tertiary);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.stepper-progress-bar {
+  position: absolute;
+  left: 40px;
+  top: 50%;
+  height: 2px;
+  background-color: var(--accent-steel);
+  transform: translateY(-50%);
+  width: 0%; /* Dynamically updated: 0%, 33.3%, 66.6%, 100% */
+  z-index: 1;
+  transition: width var(--transition-normal);
+}
+
+.step-node {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 2;
+  transition: all var(--transition-normal);
+}
+
+.step-node.active {
+  background-color: var(--bg-secondary);
+  border-color: var(--accent-steel);
+  color: var(--text-primary);
+  box-shadow: 0 0 10px var(--border-glow);
+}
+
+.step-node.completed {
+  background-color: var(--accent-steel);
+  border-color: var(--accent-steel);
+  color: white;
+}
+
+/* Wizard step panels */
+.wizard-step {
+  display: none;
+  animation: fadeIn var(--transition-normal);
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wizard-step.active {
+  display: flex;
+}
+
+/* Upload zone */
+.upload-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  background-color: rgba(22, 30, 49, 0.4);
+  transition: var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.upload-zone:hover {
+  border-color: var(--accent-steel);
+  background-color: var(--accent-steel-light);
+}
+
+.upload-icon {
+  font-size: 48px;
+  color: var(--text-muted);
+  transition: var(--transition-fast);
+}
+
+.upload-zone:hover .upload-icon {
+  color: var(--accent-steel);
+  transform: translateY(-4px);
+}
+
+.upload-zone input[type="file"] {
+  display: none;
+}
+
+.upload-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.upload-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* AI HUD Scanning Panel */
+.ai-scan-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.image-preview-container {
+  width: 100%;
+  height: 320px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-preview-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Futuristic Scan bar animation */
+.ai-scan-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(14, 19, 32, 0.4);
+  pointer-events: none;
+}
+
+.ai-scan-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--color-progress), transparent);
+  box-shadow: 0 0 12px var(--color-progress), 0 0 20px var(--color-progress);
+  animation: scanImage 2s linear infinite;
+}
+
+@keyframes scanImage {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+/* AI Scanning HUD Console output */
+.ai-telemetry-console {
+  background-color: #05070c;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  padding: 16px 20px;
+  font-size: 12px;
+  color: var(--color-progress);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 320px;
+  overflow-y: auto;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.console-line {
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.console-line.success {
+  color: var(--color-resolved);
+}
+
+.console-line.warning {
+  color: var(--color-open);
+}
+
+.console-blink {
+  animation: blinkConsole 1s step-end infinite;
+}
+
+@keyframes blinkConsole {
+  50% { opacity: 0; }
+}
+
+/* Geolocation Map view */
+.mini-map-container {
+  height: 250px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.location-coords-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--bg-secondary);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  margin-top: 10px;
+}
+
+.coords-label {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.coords-value {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* XP Rewards preview */
+.xp-reward-preview-card {
+  background: linear-gradient(135deg, rgba(74, 120, 192, 0.1), rgba(94, 224, 157, 0.1));
+  border: 1px solid rgba(74, 120, 192, 0.3);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.xp-reward-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.xp-reward-icon {
+  font-size: 24px;
+  color: #ffc107;
+}
+
+.xp-reward-text h4 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.xp-reward-text p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.xp-reward-amount {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-resolved);
+  font-family: var(--font-mono);
+}
+
+/* Wizard navigation footer */
+.wizard-footer {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+  margin-top: 10px;
+}

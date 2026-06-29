@@ -1,0 +1,49 @@
+/* Civiverse Color Variables - Neutral Steel-Blue Civic Palette */
+:root {
+  /* Color Tokens */
+  --bg-primary: #0e1320;
+  --bg-secondary: #161e31;
+  --bg-tertiary: #1f2a44;
+  --bg-glass: rgba(22, 30, 49, 0.75);
+  
+  --border-color: rgba(74, 96, 139, 0.25);
+  --border-glow: rgba(74, 120, 192, 0.4);
+  
+  /* Palette Accent Tones */
+  --accent-steel: #4a78c0;
+  --accent-steel-hover: #5d8ad3;
+  --accent-steel-light: rgba(74, 120, 192, 0.15);
+  
+  /* Status Colors */
+  --color-critical: #e05e5e;
+  --color-critical-bg: rgba(224, 94, 94, 0.1);
+  --color-open: #e0995e;
+  --color-open-bg: rgba(224, 153, 94, 0.1);
+  --color-progress: #5ebce0;
+  --color-progress-bg: rgba(94, 188, 224, 0.1);
+  --color-resolved: #5ee09d;
+  --color-resolved-bg: rgba(94, 224, 157, 0.1);
+  
+  /* Muted Elements */
+  --text-primary: #f0f4f9;
+  --text-secondary: #a7b7d0;
+  --text-muted: #6e7f9c;
+  
+  /* Fonts */
+  --font-primary: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Spacings & Borders */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Layout */
+  --sidebar-width: 260px;
+  --header-height: 70px;
+}
