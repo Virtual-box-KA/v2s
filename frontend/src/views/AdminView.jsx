@@ -186,6 +186,13 @@ const IssueOverlay = ({ issue, employees, isMoAdmin, onClose, onStatusUpdate, on
                       <div style={{ position: 'absolute', left: '-17px', top: '4px', width: '8px', height: '8px', borderRadius: '50%', background: i === issue.timeline.length - 1 ? 'var(--accent-steel)' : 'var(--border-color)', border: '2px solid var(--bg-secondary)' }} />
                       <div style={{ fontSize: '12px', fontWeight: '700', color: i === issue.timeline.length - 1 ? '#fff' : 'var(--text-secondary)' }}>{node.status}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0' }}>{node.note}</div>
+                      {node.image && (
+                        <img
+                          src={node.image}
+                          alt="Work evidence"
+                          style={{ marginTop: '6px', width: '100%', maxHeight: '120px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }}
+                        />
+                      )}
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(node.timestamp).toLocaleString()}</div>
                     </div>
                   ))}

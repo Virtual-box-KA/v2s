@@ -169,7 +169,8 @@
     "points": 0,
     "badge": "Field Officer",
     "assignedIssues": [
-      12
+      12,
+      13
     ]
   },
   {
@@ -185,7 +186,9 @@
     "xp": 0,
     "points": 0,
     "badge": "Field Officer",
-    "assignedIssues": []
+    "assignedIssues": [
+      13
+    ]
   },
   {
     "username": "emp-noida-001",
