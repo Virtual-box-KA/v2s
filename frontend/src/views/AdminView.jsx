@@ -33,11 +33,12 @@ const CATEGORIES_STRUCTURE = {
 };
 
 const SEVERITY_COLORS = { Critical: '#e05e5e', High: '#e0995e', Medium: '#ffc107', Low: '#5ee09d' };
-const STATUS_COLORS = { Resolved: '#5ee09d', 'In Progress': '#5ebce0', Open: '#e0995e' };
+const STATUS_COLORS = { Resolved: '#5ee09d', 'In Progress': '#5ebce0', Open: '#e0995e', Duplicate: '#a0aec0' };
 
 const getBadgeClass = (issue) => {
   if (issue.status === 'Resolved') return 'badge-resolved';
   if (issue.status === 'In Progress') return 'badge-progress';
+  if (issue.status === 'Duplicate') return 'badge-secondary';
   if (issue.severity === 'Critical') return 'badge-critical';
   return 'badge-open';
 };
@@ -57,12 +58,43 @@ const STAT_CARD = ({ icon, label, value, color, bg }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 // ISSUE DETAIL OVERLAY
 // ─────────────────────────────────────────────────────────────────────────────
-const IssueOverlay = ({ issue, employees, isMoAdmin, onClose, onStatusUpdate, onDelete, onAssign }) => {
+const IssueOverlay = ({ issue, employees, isMoAdmin, onClose, onStatusUpdate, onDelete, onAssign, onMerge }) => {
   const [statusSelect, setStatusSelect] = useState(issue.status);
   const [statusNote, setStatusNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [assignTo, setAssignTo] = useState('');
   const [assigning, setAssigning] = useState(false);
+
+  const [duplicates, setDuplicates] = useState([]);
+  const [loadingDup, setLoadingDup] = useState(false);
+  const [mergingId, setMergingId] = useState(null);
+
+  const fetchDuplicates = useCallback(async () => {
+    if (!issue.id) return;
+    setLoadingDup(true);
+    try {
+      const res = await fetch(`/api/admin/issues/${issue.id}/duplicates`);
+      if (res.ok) {
+        setDuplicates(await res.json());
+      }
+    } catch (err) {
+      console.error("Error fetching duplicates:", err);
+    } finally {
+      setLoadingDup(false);
+    }
+  }, [issue.id]);
+
+  useEffect(() => {
+    fetchDuplicates();
+  }, [fetchDuplicates]);
+
+  const handleMergeClick = async (dupId) => {
+    if (!window.confirm(`Merge duplicate issue #${dupId} into this issue? Upvotes and comments will be consolidated.`)) return;
+    setMergingId(dupId);
+    await onMerge(issue.id, dupId);
+    setMergingId(null);
+    fetchDuplicates();
+  };
 
   const handleStatusUpdate = async (e) => {
     e.preventDefault();
@@ -150,6 +182,61 @@ const IssueOverlay = ({ issue, employees, isMoAdmin, onClose, onStatusUpdate, on
                 {issue.description}
               </p>
             </div>
+
+            {/* Duplicate warning alert */}
+            {duplicates.length > 0 && (
+              <div style={{
+                background: 'rgba(224, 153, 94, 0.08)',
+                border: '1px solid rgba(224, 153, 94, 0.25)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-open)', fontWeight: '700', fontSize: '13px' }}>
+                  <i className="fas fa-triangle-exclamation" />
+                  <span>Possible Duplicate Reports Found ({duplicates.length})</span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
+                  The following issues have the same category and are located within 200m of this report. You can merge their upvotes and comments directly into this issue.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                  {duplicates.map(dup => (
+                    <div key={dup.id} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      padding: '8px 12px',
+                      borderRadius: '4px',
+                      border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          #{dup.id} · {dup.title}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          By {dup.createdBy} · {dup.distance}m away · {dup.upvotes} upvotes
+                        </div>
+                      </div>
+                      <button
+                        className="btn"
+                        style={{ padding: '6px 12px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                        disabled={mergingId === dup.id}
+                        onClick={() => handleMergeClick(dup.id)}
+                      >
+                        {mergingId === dup.id ? (
+                          <><i className="fas fa-spinner fa-spin" style={{ marginRight: '4px' }} /> Merging...</>
+                        ) : (
+                          <><i className="fas fa-compress-arrows-alt" style={{ marginRight: '4px' }} /> Merge</>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Metadata grid */}
             <div>
@@ -363,7 +450,10 @@ const AdminView = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab })
 
   // ── MAP ───────────────────────────────────────────────────────────────────
   const filteredIssues = issues
-    .filter(i => !filterStatus || i.status === filterStatus)
+    .filter(i => {
+      if (filterStatus) return i.status === filterStatus;
+      return i.status !== 'Duplicate';
+    })
     .filter(i => !filterCategory || i.category === filterCategory)
     .filter(i => !searchIssues || i.title.toLowerCase().includes(searchIssues.toLowerCase()) || (i.location?.address || '').toLowerCase().includes(searchIssues.toLowerCase()));
 
@@ -456,6 +546,26 @@ const AdminView = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab })
     } catch { showToast('Failed to assign', 'error'); }
   };
 
+  const handleMerge = async (issueId, dupId) => {
+    try {
+      const res = await fetch(`/api/admin/issues/${issueId}/merge/${dupId}`, {
+        method: 'POST'
+      });
+      if (!res.ok) throw new Error();
+      showToast(`Merged duplicate issue #${dupId} successfully!`, 'success');
+      await fetchAll();
+      // Re-fetch the overlay issue to show the updated timeline/upvotes
+      const refreshedIssue = await fetch(`/api/issues?username=${currentUser}`)
+        .then(r => r.json())
+        .then(data => data.find(i => i.id === issueId));
+      if (refreshedIssue) {
+        setOverlayIssue(refreshedIssue);
+      }
+    } catch {
+      showToast('Failed to merge duplicate issue', 'error');
+    }
+  };
+
   const handleDeleteUser = async (phone, uname) => {
     if (!window.confirm(`Remove ${uname}?`)) return;
     try {
@@ -532,6 +642,7 @@ const AdminView = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab })
               <option value="Open">Open</option>
               <option value="In Progress">In Progress</option>
               <option value="Resolved">Resolved</option>
+              <option value="Duplicate">Closed (Duplicate)</option>
             </select>
             <select className="form-control" style={{ fontSize: '12px', width: 'auto', padding: '8px 12px' }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
               <option value="">All Categories</option>
@@ -805,6 +916,7 @@ const AdminView = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab })
           onStatusUpdate={handleStatusUpdate}
           onDelete={handleDeleteIssue}
           onAssign={handleAssign}
+          onMerge={handleMerge}
         />
       )}
     </div>

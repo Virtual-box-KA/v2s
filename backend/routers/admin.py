@@ -2,6 +2,7 @@
 routers/admin.py — Admin-only user and issue management, plus MO employee management.
 """
 from datetime import datetime, timezone
+import math
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -201,3 +202,125 @@ def assign_issue(phone: str, issue_id: int, body: AssignIssueBody = None):
 
     print(f"[Admin] Issue #{issue_id} assigned to {emp['username']} by {body.assignedBy or 'admin'}")
     return {"success": True, "assignedIssues": assigned, "assignedTo": emp["username"]}
+
+
+# ── Deduplication & Merging Logic ─────────────────────────────────────────────
+def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """Calculate distance between two coordinates in meters using flat-earth approximation."""
+    # Approximate Earth radius in meters
+    R = 6371000.0
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    delta_lat = math.radians(lat2 - lat1)
+    delta_lng = math.radians(lng2 - lng1)
+    
+    # Flat surface projection approximation for local distances
+    x = delta_lng * math.cos((lat1_rad + lat2_rad) / 2.0)
+    y = delta_lat
+    return math.sqrt(x*x + y*y) * R
+
+
+@router.get("/issues/{issue_id}/duplicates")
+def get_duplicates(issue_id: int):
+    issues = read_issues()
+    main_issue = next((i for i in issues if i["id"] == issue_id), None)
+    if not main_issue:
+        raise HTTPException(404, "Issue not found")
+        
+    main_lat = main_issue.get("location", {}).get("lat")
+    main_lng = main_issue.get("location", {}).get("lng")
+    main_category = main_issue.get("category")
+    main_city = main_issue.get("city")
+    
+    if main_lat is None or main_lng is None:
+        return []
+        
+    duplicates = []
+    for issue in issues:
+        # Exclude itself and already merged/resolved/duplicate issues
+        if issue["id"] == issue_id or issue.get("status") in ("Resolved", "Duplicate"):
+            continue
+            
+        # Same city and same category check
+        if (issue.get("city", "").lower() == main_city.lower() and 
+            issue.get("category", "").lower() == main_category.lower()):
+            
+            lat = issue.get("location", {}).get("lat")
+            lng = issue.get("location", {}).get("lng")
+            if lat is not None and lng is not None:
+                dist = calculate_distance(main_lat, main_lng, lat, lng)
+                # Within 200 meters threshold
+                if dist <= 200.0:
+                    duplicates.append({
+                        "id": issue["id"],
+                        "title": issue["title"],
+                        "createdBy": issue.get("createdBy", "Anonymous"),
+                        "createdAt": issue.get("createdAt"),
+                        "status": issue.get("status"),
+                        "upvotes": issue.get("upvotes", 0),
+                        "distance": round(dist, 1)
+                    })
+                    
+    return duplicates
+
+
+@router.post("/issues/{issue_id}/merge/{dup_id}")
+def merge_issue(issue_id: int, dup_id: int):
+    issues = read_issues()
+    main_issue = next((i for i in issues if i["id"] == issue_id), None)
+    dup_issue = next((i for i in issues if i["id"] == dup_id), None)
+    
+    if not main_issue:
+        raise HTTPException(404, "Main issue not found")
+    if not dup_issue:
+        raise HTTPException(404, "Duplicate issue not found")
+        
+    ts = datetime.now(timezone.utc).isoformat()
+    
+    # 1. Merge unique upvoters and sum upvotes
+    main_upvoted_by = set(main_issue.get("upvotedBy", []))
+    dup_upvoted_by = set(dup_issue.get("upvotedBy", []))
+    
+    # Add duplicate creator as upvoter if not already present
+    if dup_issue.get("createdBy"):
+        dup_upvoted_by.add(dup_issue["createdBy"])
+        
+    merged_upvoters = main_upvoted_by.union(dup_upvoted_by)
+    main_issue["upvotedBy"] = list(merged_upvoters)
+    main_issue["upvotes"] = len(merged_upvoters)
+    
+    # 2. Merge comments
+    main_comments = main_issue.setdefault("comments", [])
+    dup_comments = dup_issue.get("comments", [])
+    
+    # Keep track of next comment ID
+    next_comment_id = max((c["id"] for c in main_comments), default=200) + 1
+    for comment in dup_comments:
+        main_comments.append({
+            "id": next_comment_id,
+            "user": comment.get("user", "Anonymous"),
+            "text": f"[From Duplicate Issue #{dup_id}] {comment.get('text', '')}",
+            "timestamp": comment.get("timestamp", ts)
+        })
+        next_comment_id += 1
+        
+    # 3. Log merging in main issue timeline
+    main_issue.setdefault("timeline", []).append({
+        "status": main_issue.get("status", "In Progress"),
+        "timestamp": ts,
+        "note": f"Merged duplicate issue #{dup_id} reported by {dup_issue.get('createdBy', 'Anonymous')}. Consolidated comments and upvotes (New Total: {main_issue['upvotes']} upvotes).",
+        "image": None
+    })
+    
+    # 4. Update duplicate issue status to Duplicate
+    dup_issue["status"] = "Duplicate"
+    dup_issue.setdefault("timeline", []).append({
+        "status": "Duplicate",
+        "timestamp": ts,
+        "note": f"Issue marked as duplicate of #{issue_id} and closed.",
+        "image": None
+    })
+    
+    write_issues(issues)
+    print(f"[Admin] Merged duplicate issue #{dup_id} into issue #{issue_id}")
+    return main_issue
