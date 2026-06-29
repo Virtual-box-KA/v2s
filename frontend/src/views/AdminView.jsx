@@ -437,7 +437,11 @@ const AdminView = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab })
 
   const handleAssign = async (issueId, employeePhone) => {
     try {
-      const res = await fetch(`/api/admin/employees/${employeePhone}/assign/${issueId}`, { method: 'POST' });
+      const res = await fetch(`/api/admin/employees/${employeePhone}/assign/${issueId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedBy: currentUser }),
+      });
       if (!res.ok) throw new Error();
       const emp = employees.find(e => e.phone === employeePhone);
       showToast(`Assigned to ${emp?.username || 'employee'}`, 'success');

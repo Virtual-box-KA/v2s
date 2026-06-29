@@ -11,6 +11,7 @@ import ReportView from './views/ReportView';
 import InsightsView from './views/InsightsView';
 import RewardsView from './views/RewardsView';
 import AdminView from './views/AdminView';
+import EmployeeView from './views/EmployeeView';
 import ProfileView from './views/ProfileView';
 
 const AppContent = () => {
@@ -23,6 +24,8 @@ const AppContent = () => {
     if (currentUser) {
       if (userRole === 'admin') {
         setActiveView('issues');
+      } else if (userRole === 'employee') {
+        setActiveView('employee');
       } else {
         setActiveView('dashboard');
       }
@@ -32,6 +35,8 @@ const AppContent = () => {
   const handleSetView = (viewId) => {
     if (userRole === 'admin' && (viewId === 'report' || viewId === 'rewards' || viewId === 'dashboard')) {
       setActiveView('issues');
+    } else if (userRole === 'employee' && viewId !== 'profile') {
+      setActiveView('employee');
     } else {
       setActiveView(viewId);
     }
@@ -46,6 +51,11 @@ const AppContent = () => {
     // Admin users see the admin panel for all other views
     if (userRole === 'admin') {
       return <AdminView activeTab={activeView} setActiveTab={handleSetView} />;
+    }
+
+    // Employee view
+    if (userRole === 'employee') {
+      return <EmployeeView />;
     }
 
     switch (activeView) {
@@ -93,7 +103,7 @@ const AppContent = () => {
           <main className="main-content">
             <Header activeView={activeView} setActiveView={handleSetView} />
             <div className="page-content" style={
-              (activeView === 'feed' || (userRole === 'admin' && activeView !== 'profile'))
+              (activeView === 'feed' || (userRole === 'admin' && activeView !== 'profile') || userRole === 'employee')
                 ? { padding: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }
                 : {}
             }>

@@ -3,8 +3,9 @@ import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ activeView, setActiveView }) => {
   const { userRole, userRecord, currentUser, logoutUser } = useAuth();
-  const isAgent = userRole === 'admin';
-  const isMoAdmin = isAgent && currentUser && currentUser.startsWith('mo-');
+  const isAgent    = userRole === 'admin';
+  const isEmployee = userRole === 'employee';
+  const isMoAdmin  = isAgent && currentUser && currentUser.startsWith('mo-');
 
   const citizenNavItems = [
     { id: 'dashboard', icon: 'fa-chart-line', label: 'Dashboard' },
@@ -20,8 +21,11 @@ const Sidebar = ({ activeView, setActiveView }) => {
     { id: 'analytics', icon: 'fa-chart-pie',     label: 'Analytics' },
   ];
 
-  // Admin sidebar: clicking nav items is informational only (AdminView manages its own tabs)
-  const navItems = isAgent ? adminNavItems : citizenNavItems;
+  const employeeNavItems = [
+    { id: 'employee', icon: 'fa-hard-hat', label: 'My Assignments' },
+  ];
+
+  const navItems = isEmployee ? employeeNavItems : (isAgent ? adminNavItems : citizenNavItems);
 
   return (
     <aside className="sidebar">
@@ -38,6 +42,16 @@ const Sidebar = ({ activeView, setActiveView }) => {
           fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px'
         }}>
           <i className="fas fa-shield-halved" /> Admin Console
+        </div>
+      )}
+      {isEmployee && (
+        <div style={{
+          margin: '12px 10px 4px', padding: '8px 12px',
+          background: 'rgba(255,193,7,0.08)', border: '1px solid rgba(255,193,7,0.25)',
+          borderRadius: 'var(--radius-sm)', fontSize: '11px', color: '#ffc107',
+          fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px'
+        }}>
+          <i className="fas fa-hard-hat" /> Field Officer
         </div>
       )}
 
@@ -57,6 +71,8 @@ const Sidebar = ({ activeView, setActiveView }) => {
         <div>
           {isAgent ? (
             <span style={{ color: 'var(--color-open)' }}>Municipal Officer</span>
+          ) : isEmployee ? (
+            <span style={{ color: '#ffc107' }}>Field Officer</span>
           ) : (
             <span>{userRecord?.idType || 'Citizen'}</span>
           )}

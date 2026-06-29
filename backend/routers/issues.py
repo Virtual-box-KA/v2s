@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 from backend.db import read_issues, write_issues
 from backend.models import (
     CreateIssueRequest, VerifyIssueRequest,
-    StatusUpdateRequest, AddCommentRequest,
+    StatusUpdateRequest, AddCommentRequest, WorkUpdateRequest,
 )
 
 router = APIRouter(prefix="/api/issues", tags=["issues"])
@@ -208,3 +208,36 @@ def add_comment(issue_id: int, body: AddCommentRequest):
 
     write_issues(issues)
     return new_comment
+
+
+# ── POST employee work update ─────────────────────────────────────────
+@router.post("/{issue_id}/work-update")
+def work_update(issue_id: int, body: WorkUpdateRequest):
+    """Employee submits a field progress update with optional work photo.
+    Status is limited to Open/In Progress — only MO Admin can set Resolved."""
+    if not body.user or not body.note:
+        raise HTTPException(400, "User and note are required")
+
+    if body.status == "Resolved":
+        raise HTTPException(403, "Only MO Admin can mark an issue as Resolved")
+
+    issues = read_issues()
+    issue = next((i for i in issues if i["id"] == issue_id), None)
+    if not issue:
+        raise HTTPException(404, "Issue not found")
+
+    # Apply status change (only Open or In Progress allowed)
+    if body.status and body.status in ("Open", "In Progress"):
+        issue["status"] = body.status
+
+    # Append timeline entry with note and optional photo
+    issue.setdefault("timeline", []).append({
+        "status":    issue["status"],
+        "timestamp": _now(),
+        "note":      f"Work update by {body.user}: {body.note}",
+        "image":     body.image,
+    })
+
+    write_issues(issues)
+    print(f"[Issues] Work update on #{issue_id} by {body.user}: status={issue['status']}")
+    return issue

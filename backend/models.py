@@ -79,3 +79,11 @@ class CreateUserRequest(BaseModel):
     email: Optional[str] = ""
     idType: Optional[str] = "Aadhaar Card"
     idNumber: Optional[str] = ""
+
+
+# ── Employee Work Update ──────────────────────────────────────────────────────
+class WorkUpdateRequest(BaseModel):
+    user: str           # employee username
+    note: str           # field notes
+    image: Optional[str] = None   # base64 work photo
+    status: Optional[str] = "In Progress"  # employee can only set Open | In Progress

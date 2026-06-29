@@ -1,6 +1,7 @@
 """
 routers/admin.py — Admin-only user and issue management, plus MO employee management.
 """
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -159,15 +160,56 @@ def delete_employee(phone: str):
 
 
 # ── POST assign issue to employee ─────────────────────────────────────────────
+class AssignIssueBody(BaseModel):
+    assignedBy: Optional[str] = ""
+
+
 @router.post("/employees/{phone}/assign/{issue_id}")
-def assign_issue(phone: str, issue_id: int):
+def assign_issue(phone: str, issue_id: int, body: AssignIssueBody = None):
+    if body is None:
+        body = AssignIssueBody()
+
     users = read_users()
     emp = next((u for u in users if u.get("phone") == phone and u.get("role") == "employee"), None)
     if not emp:
         raise HTTPException(404, "Employee not found")
+
+    # Add to employee's assigned issues list
     assigned = emp.get("assignedIssues", [])
     if issue_id not in assigned:
         assigned.append(issue_id)
         emp["assignedIssues"] = assigned
         write_users(users)
-    return {"success": True, "assignedIssues": assigned}
+
+    # Update the issue: set assignedTo + append timeline entry
+    issues = read_issues()
+    issue = next((i for i in issues if i["id"] == issue_id), None)
+    if issue:
+        issue["assignedTo"] = emp["username"]
+        ts = datetime.now(timezone.utc).isoformat()
+
+        # Assignment timeline note
+        assign_note = f"Assigned to {emp['username']} ({emp.get('department', 'General')})"
+        if body.assignedBy:
+            assign_note += f" by {body.assignedBy}"
+        issue.setdefault("timeline", []).append({
+            "status": issue.get("status", "Open"),
+            "timestamp": ts,
+            "note": assign_note,
+            "image": None,
+        })
+
+        # Auto-advance to In Progress if still Open
+        if issue.get("status") == "Open":
+            issue["status"] = "In Progress"
+            issue["timeline"].append({
+                "status": "In Progress",
+                "timestamp": ts,
+                "note": "Status updated to In Progress — work has been assigned to a field officer.",
+                "image": None,
+            })
+
+        write_issues(issues)
+
+    print(f"[Admin] Issue #{issue_id} assigned to {emp['username']} by {body.assignedBy or 'admin'}")
+    return {"success": True, "assignedIssues": assigned, "assignedTo": emp["username"]}
