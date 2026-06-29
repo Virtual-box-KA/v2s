@@ -124,46 +124,47 @@ def admin_login(body: AdminLoginRequest):
         raise HTTPException(400, "Username and phone are required")
 
     users = read_users()
-    admins = [u for u in users if u.get("role") == "admin"]
-    admin_user = next(
-        (u for u in admins if u.get("username", "").lower() == body.username.lower()),
+    officials = [u for u in users if u.get("role") in ("admin", "employee")]
+    official_user = next(
+        (u for u in officials if u.get("username", "").lower() == body.username.lower()),
         None,
     )
 
-    if not admin_user:
-        if admins:
-            raise HTTPException(403, "Unrecognized admin username. Contact your administrator.")
-        # Bootstrap first-ever admin
-        admin_user = {
-            "username": body.username,
-            "email":    f"{body.username.lower()}@civiverse.gov.in",
-            "phone":    body.phone,
-            "idType":   "Government ID",
-            "idNumber": f"GOV-{random.randint(100000, 999999)}",
-            "role":     "admin",
-            "verified": True,
-            "xp":       0,
-            "points":   0,
-            "badge":    "Municipal Officer",
-        }
-        users.append(admin_user)
-        write_users(users)
-        print(f"[Admin] First admin bootstrapped: {body.username}")
+    if not official_user:
+        # If the username starts with "mo-", bootstrap them as admin
+        if body.username.lower().startswith("mo-"):
+            official_user = {
+                "username": body.username,
+                "email":    f"{body.username.lower()}@civiverse.gov.in",
+                "phone":    body.phone,
+                "idType":   "Government ID",
+                "idNumber": f"GOV-{random.randint(100000, 999999)}",
+                "role":     "admin",
+                "verified": True,
+                "xp":       0,
+                "points":   0,
+                "badge":    "Municipal Officer",
+            }
+            users.append(official_user)
+            write_users(users)
+            print(f"[Admin] Admin bootstrapped: {body.username}")
+        else:
+            raise HTTPException(403, "Unrecognized username or unauthorized access.")
     else:
-        admin_user["phone"] = body.phone
+        official_user["phone"] = body.phone
         write_users(users)
 
     otp = _generate_otp()
     pending_verifications[body.phone] = {
-        "username": admin_user["username"],
-        "email":    admin_user.get("email", ""),
+        "username": official_user["username"],
+        "email":    official_user.get("email", ""),
         "phone":    body.phone,
-        "idType":   admin_user.get("idType", "Government ID"),
-        "idNumber": admin_user.get("idNumber", ""),
-        "role":     "admin",
+        "idType":   official_user.get("idType", "Government ID"),
+        "idNumber": official_user.get("idNumber", ""),
+        "role":     official_user.get("role"),
         "otp":      otp,
         "isLogin":  True,
     }
 
-    print(f"[Admin SMS Sim] OTP for {body.username} ({body.phone}): {otp}")
+    print(f"[Official SMS Sim] OTP for {body.username} ({body.phone}): {otp}")
     return {"success": True, "phone": body.phone, "simulatedOtp": otp, "isLogin": True}
